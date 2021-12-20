@@ -35,6 +35,8 @@ parser.add_argument('--epsilon-min', type=float, default=0.01,
 parser.add_argument('--epsilon-dec', type=float, default=0.001,
                     help='Epsilon - step value')
 
+parser.add_argument('--model-path', default='py_2048_rl.models.DEFAULT_MODEL',
+                    help='Python path to the model to compile')
 parser.add_argument('--model-load-file', default=None,
                     help='Model load file path (h5)')
 parser.add_argument('--model-save-file', default='model.h5',
@@ -96,6 +98,7 @@ def main():
         epsilon=args.epsilon,
         epsilon_dec=args.epsilon_dec,
         epsilon_min=args.epsilon_min,
+        model_path=args.model_path,
         model_load_file=args.model_load_file,
         model_save_file=args.model_save_file,
         model_auto_save=args.model_auto_save,
@@ -110,8 +113,9 @@ def main():
                               refill_episode_db=args.refill_episode_db
                               )
 
+
     elif args.action == 'infer':
-        agent.play_on_repeat(args.learn_runs)
+        agent.play_on_repeat(args.runs)
 
 if __name__ == "__main__":
     main()
