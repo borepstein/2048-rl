@@ -25,7 +25,8 @@ class Agent:
             gamma1=0.99,
             gamma2=0.99,
             gamma3=0.99,
-            exp_coeff = 10.0,
+            mult_coeff = 10.0,
+            q_base = 1.0,
             epsilon=1,
             epsilon_dec=1e-3,
             epsilon_min=0.01,
@@ -45,7 +46,8 @@ class Agent:
         self.gamma1 = gamma1
         self.gamma2 = gamma2
         self.gamma3 = gamma3
-        self.exp_coeff = exp_coeff
+        self.mult_coeff = mult_coeff
+        self.q_base = q_base
         self.epsilon = epsilon
         self.epsilon_dec = epsilon_dec
         self.epsilon_min = epsilon_min
@@ -109,9 +111,8 @@ class Agent:
 
         batch_index = np.arange(sel_size)
         q_target[batch_index, actions] = tf.math.l2_normalize(
-            1/tf.math.exp(
-                self.exp_coeff *
-                tf.math.l2_normalize(
+            1/(self.mult_coeff * (
+                    self.q_base +
                     rewards +
                     self.gamma * np.max(q_next, axis=1) +
                     self.gamma1 * scores.numpy() +
