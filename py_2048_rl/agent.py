@@ -25,7 +25,7 @@ class Agent:
             gamma1=0.99,
             gamma2=0.99,
             gamma3=0.99,
-            mult_coeff = 10.0,
+            mult_coeff = 0.1,
             min_base = 1e-06,
             q_base = 1.0,
             epsilon=1,
@@ -89,6 +89,17 @@ class Agent:
         self.game_count = 0
         self.last_game_score = 0
         self.last_move_count = 0
+        self.q_val_opt_max=True
+
+    def arg_sel_func(self):
+        if self.q_val_opt_max:
+            return np.argmax
+        return np.argmin
+
+    def get_q_mod_func(self):
+        if self.q_val_opt_max:
+            return self.get_modeling_data_q_max
+        return self.get_modeling_data_q_min
 
     def _make_model(self):
         class_name = self.model_path.split('.')[-1]
@@ -101,13 +112,10 @@ class Agent:
         )
         return model
 
-    def learn(self, run):
-        if self.model_collect_random_data:
-            self.accumulate_episode_data()
-
-        # Exit if no data to learn from
+    def get_modeling_data_q_min(self):
+        # Return None if there is no data to learn from
         if self.episode_db.mem_cntr == 0:
-            return
+            return None, None
 
         sel_size, states, states_, actions, rewards, scores, n_moves, dones = \
             self.episode_db.get_random_data_batch(self.batch_size)
@@ -129,6 +137,42 @@ class Agent:
             )
         )
 
+        return states, q_target
+
+    def get_modeling_data_q_max(self):
+        # Return None if there is no data to learn from
+        if self.episode_db.mem_cntr == 0:
+            return None, None
+
+        sel_size, states, states_, actions, rewards, scores, n_moves, dones = \
+            self.episode_db.get_random_data_batch(self.batch_size)
+
+        q_eval = tf.Variable(self.model.predict(states.numpy()))
+        q_next = tf.Variable(self.model.predict(states_.numpy()))
+        q_target = q_eval.numpy()
+
+        batch_index = np.arange(sel_size)
+        q_target[batch_index, actions] = self.mult_coeff * \
+                                         (self.q_base +
+                                          rewards +
+                                          self.gamma * np.min(q_next, axis=1) +
+                                          self.gamma1 * scores.numpy() +
+                                          self.gamma2 * scores.numpy() *
+                                          dones.numpy() +
+                                          self.gamma3 * n_moves.numpy()
+                                          )
+
+        return states, q_target
+
+    def learn(self, run):
+        if self.model_collect_random_data:
+            self.accumulate_episode_data()
+
+        q_mod_func = self.get_q_mod_func()
+        states, q_target = q_mod_func()
+
+        if q_target is None:
+            return
 
         callbacks = []
         if self.log_dir:
@@ -249,7 +293,8 @@ class Agent:
 
         pred_actions = self.model.predict(state)[0]
         avai_actions = game.available_actions()
-        return avai_actions[np.argmin(pred_actions[avai_actions])]
+        sel_f = self.arg_sel_func()
+        return avai_actions[sel_f(pred_actions[avai_actions])]
 
     def play_on_repeat(self, n_games=1):
         min_score = 0
