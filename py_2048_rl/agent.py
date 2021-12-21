@@ -305,25 +305,49 @@ class Agent:
             file_writer = tf.summary.create_file_writer(self.log_dir)
             file_writer.set_as_default()
 
-        for i in range(n_games):
-            self.play_game(self.action_greedy)
+        for i in range(n_cycles):
+            self.learn(i)
 
-            if i == 0:
-                min_score = self.last_game_score
-            else:
-                min_score = min(min_score, self.last_game_score)
+            if self.model_auto_save:
+                self.save_model()
 
-            max_score = max(max_score, self.last_game_score)
-            sum_scores += self.last_game_score
-            avg_score = sum_scores / (i+1)
+            episode_count = 0
+            cycle_game_count = 0
 
-            logger.info('Step %d: min=%s avg=%f last=%d max=%d',
-                        i, min_score, avg_score, self.last_game_score, max_score)
+            while True:
+                self.play_game(self.action_greedy_epsilon)
+                cycle_game_count += 1
+                episode_count += self.last_move_count
+                self.game_count += 1
+
+                if self.game_count == 1:
+                    min_score = self.last_game_score
+                else:
+                    min_score = min(min_score, self.last_game_score)
+
+                max_score = max(max_score, self.last_game_score)
+                sum_scores += self.last_game_score
+                avg_score = sum_scores / self.game_count
+
+                logger.info('Game %d: min=%s avg=%s last=%s max=%s',
+                            self.game_count, max_score, avg_score, self.last_game_score, max_score)
+
+                tf.summary.scalar('Game score', data=self.last_game_score, step=self.game_count)
+                tf.summary.scalar('Game move', data=self.last_move_count, step=self.game_count)
+                tf.summary.scalar('Epsilon', data=self.epsilon, step=self.game_count)
+
+                if ((not refill_episode_db) and
+                    (cycle_game_count >= games_per_cycle)) or \
+                    ((refill_episode_db) and
+                     (episode_count >= self.episode_db.mem_size)):
+                    break
+
             if self.log_dir:
                 file_writer.flush()
 
         if self.log_dir:
             file_writer.close()
+
 
     def save_model(self):
         self.model.save(self.model_save_file)
