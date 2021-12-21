@@ -1,11 +1,11 @@
 import tensorflow as tf
 
 DEFAULT_MODEL = tf.keras.models.Sequential([
-    tf.keras.layers.Dense(16, activation='tanh'),
-    tf.keras.layers.Dense(512, activation='tanh'),
-    tf.keras.layers.Dense(512, activation='tanh'),
-    tf.keras.layers.Dense(512, activation='tanh'),
-    tf.keras.layers.Dense(512, activation='tanh'),
+    tf.keras.layers.Dense(16, activation='sigmoid'),
+    tf.keras.layers.Dense(512, activation='sigmoid'),
+    tf.keras.layers.Dense(512, activation='sigmoid'),
+    tf.keras.layers.Dense(512, activation='sigmoid'),
+    tf.keras.layers.Dense(512, activation='sigmoid'),
     tf.keras.layers.Dense(4, activation=None)
 ])
 
