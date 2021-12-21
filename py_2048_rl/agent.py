@@ -306,7 +306,7 @@ class Agent:
             file_writer.set_as_default()
 
         for i in range(n_games):
-            self.play_game(self.action_greedy_epsilon)
+            self.play_game(self.action_greedy)
 
             if self.model_auto_save:
                 self.save_model()
