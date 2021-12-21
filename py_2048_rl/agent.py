@@ -223,7 +223,7 @@ class Agent:
                 avg_score = sum_scores / self.game_count
 
                 logger.info('Game %d: min=%s avg=%s last=%s max=%s',
-                            self.game_count, max_score, avg_score, self.last_game_score, max_score)
+                            self.game_count, min_score, avg_score, self.last_game_score, max_score)
 
                 tf.summary.scalar('Game score', data=self.last_game_score, step=self.game_count)
                 tf.summary.scalar('Game move', data=self.last_move_count, step=self.game_count)
