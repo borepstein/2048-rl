@@ -47,7 +47,7 @@ parser.add_argument('--model-auto-save', default=True, action="store_false",
                     dest="model_auto_save")
 parser.add_argument('--model-collect-random-data', default=True,
                     dest="model_collect_random_data")
-parser.add_argument('--refill-episode-db', default=False,
+parser.add_argument('--refill-episode-db', default=False, action="store_true",
                     dest="refill_episode_db")
 
 parser.add_argument('--log-dir', default=None,
@@ -115,7 +115,7 @@ def main():
 
 
     elif args.action == 'infer':
-        agent.play_on_repeat(args.runs)
+        agent.play_on_repeat(args.learn_runs)
 
 if __name__ == "__main__":
     main()

@@ -217,9 +217,9 @@ class Agent:
 
         while not game.game_over():
             action = action_callback(game)
-            state = np.matrix.flatten(game.state())
+            state = np.matrix.flatten(game.state)
             reward = game.do_action(action)
-            state_ = np.matrix.flatten(game.state())
+            state_ = np.matrix.flatten(game.state)
             episode = episodes.Episode(
                 state=state,
                 next_state=state_,
@@ -245,7 +245,7 @@ class Agent:
         return self.action_greedy(game)
 
     def action_greedy(self, game):
-        state = game.state()
+        state = game.state
         state = np.matrix.reshape(state, (1, 16))
 
         pred_actions = self.model.predict(state)[0]
@@ -262,16 +262,19 @@ class Agent:
             file_writer.set_as_default()
 
         for i in range(n_games):
-            self.play_game(self.action_greedy_epsilon)
+            self.play_game(self.action_greedy)
 
-            if i != 0:
+            if i == 0:
+                min_score = self.last_game_score
+            else:
                 min_score = min(min_score, self.last_game_score)
+
             max_score = max(max_score, self.last_game_score)
             sum_scores += self.last_game_score
             avg_score = sum_scores / (i+1)
 
-            logger.info('Step %d: min=%s avg=%s last=%s max=%s',
-                        i, max_score, avg_score, self.last_game_score, max_score)
+            logger.info('Step %d: min=%s avg=%f last=%d max=%d',
+                        i, min_score, avg_score, self.last_game_score, max_score)
             if self.log_dir:
                 file_writer.flush()
 
