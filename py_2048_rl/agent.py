@@ -91,6 +91,13 @@ class Agent:
         self.last_move_count = 0
         self.q_val_opt_max=True
 
+    def get_epsilon(self):
+        val = self.epsilon
+        if self.epsilon > self.epsilon_min:
+            self.epsilon = self.epsilon - self.epsilon_dec
+
+        return val
+
     def arg_sel_func(self):
         if self.q_val_opt_max:
             return np.argmax
@@ -208,7 +215,7 @@ class Agent:
             cycle_game_count = 0
 
             while True:
-                self.play_game(self.action_greedy_epsilon)
+                self.play_game(self.action_greedy)
                 cycle_game_count += 1
                 episode_count += self.last_move_count
                 self.game_count += 1
@@ -278,12 +285,8 @@ class Agent:
         self.last_move_count = game.move_count
 
     def action_greedy_epsilon(self, game):
-        if np.random.random() < self.epsilon:
+        if np.random.random() < self.get_epsilon():
             return random_action_callback(game)
-
-        # Adjust the epsilon
-        if self.epsilon > self.epsilon_min:
-            self.epsilon = self.epsilon - self.epsilon_dec
 
         return self.action_greedy(game)
 
