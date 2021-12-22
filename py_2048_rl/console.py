@@ -29,9 +29,9 @@ parser.add_argument('--gamma2', type=float, default=0.99,
 parser.add_argument('--gamma3', type=float, default=0.99,
                     help='Gamma3')
 parser.add_argument('--epsilon', type=float, default=1.0,
-                    help='Epsilon')
+                    help='Epsilon - maximum value')
 parser.add_argument('--epsilon-min', type=float, default=0.01,
-                    help='Epsilon - start value')
+                    help='Epsilon - minimum value')
 parser.add_argument('--epsilon-dec', type=float, default=0.001,
                     help='Epsilon - step value')
 

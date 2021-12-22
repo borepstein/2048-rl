@@ -215,7 +215,7 @@ class Agent:
             cycle_game_count = 0
 
             while True:
-                self.play_game(self.action_greedy)
+                self.play_game(self.action_greedy_epsilon)
                 cycle_game_count += 1
                 episode_count += self.last_move_count
                 self.game_count += 1
@@ -250,7 +250,7 @@ class Agent:
 
     def accumulate_episode_data(self):
         # Bail if there's nothing to do.
-        if self.episode_db.mem_cntr >= self.batch_size:
+        if self.episode_db.mem_cntr >= self.mem_size:
             return
 
         if not self.model_collect_random_data:
