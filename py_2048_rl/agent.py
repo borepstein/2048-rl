@@ -162,7 +162,7 @@ class Agent:
         q_target[batch_index, actions] = self.mult_coeff * \
                                          (self.q_base +
                                           rewards +
-                                          self.gamma * np.min(q_next, axis=1) +
+                                          self.gamma * np.max(q_next, axis=1) * (1 - dones.numpy())+
                                           self.gamma1 * scores.numpy() +
                                           self.gamma2 * scores.numpy() *
                                           dones.numpy() +
