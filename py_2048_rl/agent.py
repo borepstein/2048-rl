@@ -87,6 +87,7 @@ class Agent:
             self.model = self._make_model()
 
         self.game_count = 0
+        self.infer_game_count = 0
         self.last_game_score = 0
         self.last_move_count = 0
         self.q_val_opt_max=True
@@ -196,7 +197,11 @@ class Agent:
         for name in history.history:
             tf.summary.scalar(name, data=history.history[name][-1], step=run)
 
-    def learn_on_repeat(self, n_cycles=1, games_per_cycle=1, refill_episode_db=False):
+    def learn_on_repeat(self,
+                        n_cycles=1,
+                        games_per_cycle=1,
+                        refill_episode_db=False,
+                        inference_on_learn=False):
         min_score = 0
         max_score = 0
         sum_scores = 0
@@ -216,26 +221,37 @@ class Agent:
 
             while True:
                 self.play_game(self.action_greedy_epsilon)
+                last_training_score = data=self.last_game_score
+                last_training_mc = self.last_move_count
+
+                if inference_on_learn:
+                    self.play_on_repeat(tb_logging=False)
+                    tf.summary.scalar('Game score (inference)', data=self.last_game_score, step=self.infer_game_count)
+
                 cycle_game_count += 1
-                episode_count += self.last_move_count
+                episode_count += last_training_mc
                 self.game_count += 1
 
                 if self.game_count == 1:
-                    min_score = self.last_game_score
+                    min_score = last_training_score
                 else:
-                    min_score = min(min_score, self.last_game_score)
+                    min_score = min(min_score, last_training_score)
 
-                max_score = max(max_score, self.last_game_score)
-                sum_scores += self.last_game_score
+                max_score = max(max_score, last_training_score)
+                sum_scores += last_training_score
                 avg_score = sum_scores / self.game_count
 
                 logger.info('Game %d: min=%s avg=%s last=%s max=%s',
                             self.game_count, min_score, avg_score, self.last_game_score, max_score)
 
-                tf.summary.scalar('Game score', data=self.last_game_score, step=self.game_count)
+                tf.summary.scalar('Game score', data=last_training_score, step=self.game_count)
                 tf.summary.scalar('Game score (average)', data=avg_score, step=self.game_count)
-                tf.summary.scalar('Game move', data=self.last_move_count, step=self.game_count)
+                tf.summary.scalar('Game move', data=last_training_mc, step=self.game_count)
                 tf.summary.scalar('Epsilon', data=self.epsilon, step=self.game_count)
+                tf.summary.scalar('Gamma', data=self.gamma, step=self.game_count)
+                tf.summary.scalar('Gamma1', data=self.gamma1, step=self.game_count)
+                tf.summary.scalar('Gamma2', data=self.gamma2, step=self.game_count)
+                tf.summary.scalar('Gamma2', data=self.gamma3, step=self.game_count)
 
                 if ((not refill_episode_db) and
                     (cycle_game_count >= games_per_cycle)) or \
@@ -300,20 +316,18 @@ class Agent:
         sel_f = self.arg_sel_func()
         return avai_actions[sel_f(pred_actions[avai_actions])]
 
-    def play_on_repeat(self, n_games=1):
+    def play_on_repeat(self, n_games=1, tb_logging=True):
         min_score = 0
         max_score = 0
         sum_scores = 0
 
-        if self.log_dir:
+        if self.log_dir and tb_logging:
             file_writer = tf.summary.create_file_writer(self.log_dir)
             file_writer.set_as_default()
 
         for i in range(n_games):
             self.play_game(self.action_greedy)
-
-            if self.model_auto_save:
-                self.save_model()
+            self.infer_game_count += 1
 
             if i == 0:
                 min_score = self.last_game_score
@@ -327,11 +341,10 @@ class Agent:
             logger.info('Step %d: min=%s avg=%s last=%s max=%s',
                         i, min_score, avg_score, self.last_game_score, max_score)
 
-            if self.log_dir:
-                tf.summary.scalar('Game score', data=self.last_game_score, step=self.game_count)
-                file_writer.flush()
+            if self.log_dir and tb_logging:
+                tf.summary.scalar('Game score (inference)', data=self.last_game_score, step=self.infer_game_count)
 
-        if self.log_dir:
+        if self.log_dir and tb_logging:
             file_writer.close()
 
     def save_model(self):
