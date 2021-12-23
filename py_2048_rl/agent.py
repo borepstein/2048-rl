@@ -233,6 +233,7 @@ class Agent:
                             self.game_count, min_score, avg_score, self.last_game_score, max_score)
 
                 tf.summary.scalar('Game score', data=self.last_game_score, step=self.game_count)
+                tf.summary.scalar('Game score (average)', data=avg_score, step=self.game_count)
                 tf.summary.scalar('Game move', data=self.last_move_count, step=self.game_count)
                 tf.summary.scalar('Epsilon', data=self.epsilon, step=self.game_count)
 
@@ -258,7 +259,7 @@ class Agent:
 
         logger.debug("Initial data accumulation. Collection size = %s episodes.",
                      self.mem_size)
-        while self.episode_db.mem_cntr < self.batch_size:
+        while self.episode_db.mem_cntr < self.mem_size:
             self.play_game(random_action_callback)
         logger.debug("Initial data accumulation completed.")
 
