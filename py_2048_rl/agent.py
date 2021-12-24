@@ -213,7 +213,7 @@ class Agent:
         for i in range(n_cycles):
             self.learn(i)
 
-            if self.model_auto_save:
+            if self.model_auto_save and self.episode_db.mem_cntr > 0:
                 self.save_model()
 
             episode_count = 0
