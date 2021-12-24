@@ -22,10 +22,9 @@ class Agent:
             input_dims=[16],
             lr=0.001,
             gamma=0.99,
-            gamma1=0.99,
+            gamma1=0.0,
             gamma2=0.99,
-            gamma3=0.99,
-            mult_coeff = 0.1,
+            gamma3=0.0,
             min_base = 1e-06,
             q_base = 1.0,
             epsilon=1,
@@ -48,7 +47,6 @@ class Agent:
         self.gamma1 = gamma1
         self.gamma2 = gamma2
         self.gamma3 = gamma3
-        self.mult_coeff = mult_coeff
         self.min_base = min_base
         self.q_base = q_base
         self.epsilon = epsilon
@@ -133,16 +131,15 @@ class Agent:
         q_target = q_eval.numpy()
 
         batch_index = np.arange(sel_size)
-        q_target[batch_index, actions] = 1/(self.mult_coeff * (
-                self.q_base +
-                rewards +
-                self.gamma *
-                1/(self.min_base + np.min(q_next, axis=1)) +
-                self.gamma1 * scores.numpy() +
-                self.gamma2 * scores.numpy() *
-                dones.numpy() +
-                self.gamma3 * n_moves.numpy()
-            )
+        q_target[batch_index, actions] = 1/(
+            self.q_base +
+            rewards +
+            self.gamma *
+            1/(self.min_base + np.min(q_next, axis=1)) +
+            self.gamma1 * scores.numpy() +
+            self.gamma2 * scores.numpy() *
+            dones.numpy() +
+            self.gamma3 * n_moves.numpy()
         )
 
         return states, q_target
@@ -160,15 +157,15 @@ class Agent:
         q_target = q_eval.numpy()
 
         batch_index = np.arange(sel_size)
-        q_target[batch_index, actions] = self.mult_coeff * \
-                                         (self.q_base +
-                                          rewards +
-                                          self.gamma * np.max(q_next, axis=1) * (1 - dones.numpy())+
-                                          self.gamma1 * scores.numpy() +
-                                          self.gamma2 * scores.numpy() *
-                                          dones.numpy() +
-                                          self.gamma3 * n_moves.numpy()
-                                          )
+        q_target[batch_index, actions] = tf.math.l2_normalize(
+            self.q_base +
+            rewards +
+            self.gamma * np.max(q_next, axis=1) * (1 - dones.numpy())+
+            self.gamma1 * scores.numpy() +
+            self.gamma2 * scores.numpy() *
+            dones.numpy() +
+            self.gamma3 * n_moves.numpy()
+        )
 
         return states, q_target
 
@@ -253,7 +250,6 @@ class Agent:
                 tf.summary.scalar('Gamma2', data=self.gamma2, step=self.game_count)
                 tf.summary.scalar('Gamma3', data=self.gamma3, step=self.game_count)
                 tf.summary.scalar('q_base', data=self.q_base, step=self.game_count)
-                tf.summary.scalar('mult_coeff', data=self.mult_coeff, step=self.game_count)
                 tf.summary.scalar('lr', data=self.lr, step=self.game_count)
                 tf.summary.scalar('Episode DB: mem_size', data=self.episode_db.mem_size, step=self.game_count)
                 tf.summary.scalar('Episode DB: mem_cntr', data=self.episode_db.mem_cntr, step=self.game_count)
