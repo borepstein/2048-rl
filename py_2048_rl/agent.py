@@ -251,7 +251,15 @@ class Agent:
                 tf.summary.scalar('Gamma', data=self.gamma, step=self.game_count)
                 tf.summary.scalar('Gamma1', data=self.gamma1, step=self.game_count)
                 tf.summary.scalar('Gamma2', data=self.gamma2, step=self.game_count)
-                tf.summary.scalar('Gamma2', data=self.gamma3, step=self.game_count)
+                tf.summary.scalar('Gamma3', data=self.gamma3, step=self.game_count)
+                tf.summary.scalar('q_base', data=self.q_base, step=self.game_count)
+                tf.summary.scalar('mult_coeff', data=self.mult_coeff, step=self.game_count)
+                tf.summary.scalar('lr', data=self.lr, step=self.game_count)
+                tf.summary.scalar('Episode DB: mem_size', data=self.episode_db.mem_size, step=self.game_count)
+                tf.summary.scalar('Episode DB: mem_cntr', data=self.episode_db.mem_cntr, step=self.game_count)
+                tf.summary.scalar('Selection batch size', data=self.batch_size, step=self.game_count)
+
+
 
                 if ((not refill_episode_db) and
                     (cycle_game_count >= games_per_cycle)) or \
