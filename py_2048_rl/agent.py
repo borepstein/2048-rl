@@ -165,7 +165,7 @@ class Agent:
                                              ).numpy() +
             self.gamma2 * scores.numpy() *
             dones.numpy() +
-            self.gamma3 * n_moves.numpy()
+            self.gamma3 * np.max(states, axis=1)
         )
 
         return states, q_target
