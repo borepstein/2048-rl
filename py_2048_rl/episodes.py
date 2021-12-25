@@ -52,7 +52,8 @@ class EdpisodeDB:
         done_mem_np[ind] = e.done
         self.done_mem = tf.Variable(done_mem_np)
 
-        self.mem_cntr += 1
+        if self.mem_cntr < self.mem_size:
+            self.mem_cntr += 1
 
     def get_random_data_batch(self, batch_size):
         total_db_size = min(self.mem_cntr, self.mem_size)
