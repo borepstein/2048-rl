@@ -160,8 +160,9 @@ class Agent:
         q_target[batch_index, actions] = tf.math.l2_normalize(
             self.q_base +
             rewards +
-            self.gamma * np.max(q_next, axis=1) * (1 - dones.numpy())+
-            self.gamma1 * scores.numpy() +
+            self.gamma * np.max(q_next, axis=1) +
+            self.gamma1 * tf.math.reduce_sum(tf.cast(tf.equal(states, 0), tf.int32), axis=1
+                                             ).numpy() +
             self.gamma2 * scores.numpy() *
             dones.numpy() +
             self.gamma3 * n_moves.numpy()
