@@ -121,7 +121,7 @@ class Agent:
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=self.lr),
             loss='mean_squared_error',
-            metrics=[tf.keras.metrics.Accuracy()]
+            metrics=[tf.keras.metrics.CategoricalAccuracy()]
         )
         return model
 
