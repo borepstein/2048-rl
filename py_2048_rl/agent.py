@@ -259,7 +259,7 @@ class Agent:
                 tf.summary.scalar('q_base', data=self.q_base, step=self.game_count)
                 tf.summary.scalar('lr', data=self.lr, step=self.game_count)
                 tf.summary.scalar('Episode DB: mem_size', data=self.episode_db.mem_size, step=self.game_count)
-                tf.summary.scalar('Episode DB: mem_cntr', data=self.episode_db.mem_cntr, step=self.game_count)
+                tf.summary.scalar('Episode DB: total_thruput', data=self.episode_db.total_thruput, step=self.game_count)
                 tf.summary.scalar('Selection batch size', data=self.batch_size, step=self.game_count)
 
                 if ((not refill_episode_db) and

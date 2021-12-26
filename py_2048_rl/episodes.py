@@ -21,6 +21,7 @@ class EdpisodeDB:
     def __init__(self, mem_size, input_dims, **kwargs):
         self.mem_size = mem_size
         self.mem_cntr = 0
+        self.total_thruput = 0
         states_dims = [mem_size]
         states_dims.extend(input_dims)
         self.states_mem = tf.Variable(np.zeros(states_dims, np.float32))
@@ -54,6 +55,8 @@ class EdpisodeDB:
 
         if self.mem_cntr < self.mem_size:
             self.mem_cntr += 1
+
+        self.total_thruput += 1
 
     def get_random_data_batch(self, batch_size):
         total_db_size = min(self.mem_cntr, self.mem_size)
