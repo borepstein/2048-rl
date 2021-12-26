@@ -34,7 +34,6 @@ parser.add_argument('--epsilon-min', type=float, default=0.01,
                     help='Epsilon - minimum value')
 parser.add_argument('--epsilon-dec', type=float, default=0.001,
                     help='Epsilon - step value')
-
 parser.add_argument('--model-path', default='py_2048_rl.models.DEFAULT_MODEL',
                     help='Python path to the model to compile')
 parser.add_argument('--model-load-file', default=None,
@@ -43,13 +42,17 @@ parser.add_argument('--model-save-file', default='model.h5',
                     help='Model save file path (h5)')
 parser.add_argument('--training-epochs', type=int, default=1,
                     help='Number of epoch rns for every model training run')
+parser.add_argument('--game-max-replay-on-fail', type=int, default=500,
+                    help='Number of replay runs for a game failing quality control')
+parser.add_argument('--game-qc-threshold', type=float, default=0.5,
+                    help='Quotient of maximum score needed to pass quality control')
 parser.add_argument('--model-auto-save', default=True, action="store_false",
                     dest="model_auto_save")
-parser.add_argument('--model-skip-collect-random-data', default=True, action="store_false",
+parser.add_argument('--model-collect-random-data', default=False, action="store_true",
                     dest="model_collect_random_data")
 parser.add_argument('--refill-episode-db', default=False, action="store_true",
                     dest="refill_episode_db")
-parser.add_argument('--inference-on-learn', default=False, action="store_true",
+parser.add_argument('--no-inference-on-learn', default=True, action="store_false",
                     dest="inference_on_learn")
 parser.add_argument('--log-dir', default=None,
                     help='Tensorboard log directory')
@@ -106,6 +109,8 @@ def main():
         model_collect_random_data=args.model_collect_random_data,
         log_dir=args.log_dir,
         training_epochs=args.training_epochs,
+        game_qc_threshold=args.game_qc_threshold,
+        game_max_replay_on_fail=args.game_max_replay_on_fail
     )
 
     if args.action == 'train':

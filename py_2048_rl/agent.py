@@ -37,6 +37,8 @@ class Agent:
             model_collect_random_data=True,
             log_dir="/tmp/",
             training_epochs=1,
+            game_qc_threshold=0.5,
+            game_max_replay_on_fail=500,
             **kwargs
         ):
         self.batch_size = batch_size
@@ -59,6 +61,8 @@ class Agent:
         self.model_collect_random_data = model_collect_random_data
         self.log_dir = log_dir
         self.training_epochs = training_epochs
+        self.game_qc_threshold = game_qc_threshold
+        self.game_max_replay_on_fail = game_max_replay_on_fail
 
         self.episode_db = episodes.EdpisodeDB(
             self.mem_size,
@@ -91,8 +95,6 @@ class Agent:
         self.q_val_opt_max=True
         self.max_game_score = 0
         self.min_game_score = 0
-        self.game_qc_threshold = 0.25
-        self.game_max_replay_on_fail = 50
 
     def get_epsilon(self):
         val = self.epsilon
@@ -227,7 +229,7 @@ class Agent:
                 last_training_mc = self.last_move_count
 
                 if inference_on_learn:
-                    self.play_on_repeat(tb_logging=False)
+                    self.play_on_repeat(tb_logging=False, record_in_episode_db=True)
                     tf.summary.scalar('Game score (inference)', data=self.last_game_score, step=self.infer_game_count)
 
                 cycle_game_count += 1
@@ -296,13 +298,25 @@ class Agent:
 
         return True
 
-    def play_game(self, action_callback, replay_on_fail=True):
+    def play_game(self,
+                  action_callback,
+                  replay_on_fail=True,
+                  max_replays=0,
+                  record_in_episode_db=True
+                  ):
         game = Game()
         episode_arr = []
         score_pass = False
         replay_cnt = 0
 
-        while replay_on_fail and not score_pass and replay_cnt < self.game_max_replay_on_fail:
+        replay_lim = max_replays
+
+        if replay_on_fail and replay_lim == 0:
+            replay_lim = self.game_max_replay_on_fail
+
+        while True:
+            episode_arr = []
+
             while not game.game_over():
                 action = action_callback(game)
                 state = np.matrix.flatten(game.state)
@@ -323,7 +337,19 @@ class Agent:
             score_pass = self.game_qc(game)
             replay_cnt += 1
 
-        if score_pass:
+            if not record_in_episode_db:
+                break
+
+            if score_pass:
+                break
+
+            if not replay_on_fail:
+                break
+
+            if replay_on_fail and replay_cnt >= replay_lim:
+                break
+
+        if score_pass and record_in_episode_db:
             for e in episode_arr:
                 self.episode_db.store_episode(e)
 
@@ -352,7 +378,7 @@ class Agent:
         sel_f = self.arg_sel_func()
         return avai_actions[sel_f(pred_actions[avai_actions])]
 
-    def play_on_repeat(self, n_games=1, tb_logging=True):
+    def play_on_repeat(self, n_games=1, tb_logging=True, record_in_episode_db=False):
         min_score = 0
         max_score = 0
         sum_scores = 0
@@ -362,7 +388,7 @@ class Agent:
             file_writer.set_as_default()
 
         for i in range(n_games):
-            self.play_game(self.action_greedy)
+            self.play_game(self.action_greedy,record_in_episode_db=record_in_episode_db)
             self.infer_game_count += 1
 
             if i == 0:
