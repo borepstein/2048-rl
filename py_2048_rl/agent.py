@@ -305,14 +305,17 @@ class Agent:
                   record_in_episode_db=True
                   ):
         game = Game()
-        episode_arr = []
-        score_pass = False
         replay_cnt = 0
+        top_cnt = 0
+        prev_top_cnt = 0
+        top_move_cnt = 0
 
         replay_lim = max_replays
 
         if replay_on_fail and replay_lim == 0:
             replay_lim = self.game_max_replay_on_fail
+
+        candidate_arr = []
 
         while True:
             episode_arr = []
@@ -334,6 +337,13 @@ class Agent:
                     )
                 )
 
+            top_cnt = max(game.score, top_cnt)
+
+            if top_cnt > prev_top_cnt:
+                candidate_arr = episode_arr
+                prev_top_cnt = top_cnt
+                top_move_cnt = game.move_count
+
             score_pass = self.game_qc(game)
             replay_cnt += 1
 
@@ -349,8 +359,8 @@ class Agent:
             if replay_on_fail and replay_cnt >= replay_lim:
                 break
 
-        if score_pass and record_in_episode_db:
-            for e in episode_arr:
+        if record_in_episode_db:
+            for e in candidate_arr:
                 self.episode_db.store_episode(e)
 
         self.max_game_score = max(self.max_game_score, game.score)
@@ -360,8 +370,8 @@ class Agent:
         else:
             self.min_game_score = min(self.min_game_score, game.score)
 
-        self.last_game_score = game.score
-        self.last_move_count = game.move_count
+        self.last_game_score = top_cnt
+        self.last_move_count = top_move_cnt
 
     def action_greedy_epsilon(self, game):
         if np.random.random() < self.get_epsilon():
