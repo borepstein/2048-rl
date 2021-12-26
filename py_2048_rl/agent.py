@@ -89,6 +89,10 @@ class Agent:
         self.last_game_score = 0
         self.last_move_count = 0
         self.q_val_opt_max=True
+        self.max_game_score = 0
+        self.min_game_score = 0
+        self.game_qc_threshold = 0.25
+        self.game_max_replay_on_fail = 50
 
     def get_epsilon(self):
         val = self.epsilon
@@ -256,8 +260,6 @@ class Agent:
                 tf.summary.scalar('Episode DB: mem_cntr', data=self.episode_db.mem_cntr, step=self.game_count)
                 tf.summary.scalar('Selection batch size', data=self.batch_size, step=self.game_count)
 
-
-
                 if ((not refill_episode_db) and
                     (cycle_game_count >= games_per_cycle)) or \
                     ((refill_episode_db) and
@@ -284,24 +286,53 @@ class Agent:
             self.play_game(random_action_callback)
         logger.debug("Initial data accumulation completed.")
 
-    def play_game(self, action_callback):
-        game = Game()
+    def game_qc(self, game):
+        # Return True is no data thus far.
+        if self.max_game_score == 0:
+            return True
 
-        while not game.game_over():
-            action = action_callback(game)
-            state = np.matrix.flatten(game.state)
-            reward = game.do_action(action)
-            state_ = np.matrix.flatten(game.state)
-            episode = episodes.Episode(
-                state=state,
-                next_state=state_,
-                action=action,
-                reward=reward,
-                score=game.score,
-                n_moves=game.move_count,
-                done=game.game_over()
-            )
-            self.episode_db.store_episode(episode)
+        if game.score < self.game_qc_threshold * self.max_game_score:
+            return False
+
+        return True
+
+    def play_game(self, action_callback, replay_on_fail=True):
+        game = Game()
+        episode_arr = []
+        score_pass = False
+        replay_cnt = 0
+
+        while replay_on_fail and not score_pass and replay_cnt < self.game_max_replay_on_fail:
+            while not game.game_over():
+                action = action_callback(game)
+                state = np.matrix.flatten(game.state)
+                reward = game.do_action(action)
+                state_ = np.matrix.flatten(game.state)
+                episode_arr.append(
+                    episodes.Episode(
+                        state=state,
+                        next_state=state_,
+                        action=action,
+                        reward=reward,
+                        score=game.score,
+                        n_moves=game.move_count,
+                        done=game.game_over()
+                    )
+                )
+
+            score_pass = self.game_qc(game)
+            replay_cnt += 1
+
+        if score_pass:
+            for e in episode_arr:
+                self.episode_db.store_episode(e)
+
+        self.max_game_score = max(self.max_game_score, game.score)
+
+        if self.min_game_score == 0:
+            self.min_game_score = game.score
+        else:
+            self.min_game_score = min(self.min_game_score, game.score)
 
         self.last_game_score = game.score
         self.last_move_count = game.move_count
