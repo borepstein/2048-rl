@@ -120,7 +120,8 @@ class Agent:
         model = getattr(models, class_name)
         model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=self.lr),
-            loss='mean_squared_error'
+            loss='mean_squared_error',
+            metrics=[tf.keras.metrics.Accuracy()]
         )
         return model
 
