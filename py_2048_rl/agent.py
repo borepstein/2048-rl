@@ -27,18 +27,19 @@ class Agent:
             gamma3=0.0,
             min_base = 1e-06,
             q_base = 1.0,
-            epsilon=1,
-            epsilon_dec=1e-3,
-            epsilon_min=0.01,
-            model_path='py_2048_rl.models.DEFAULT_MODEL',
-            model_load_file=None,
-            model_save_file='model.h5',
-            model_auto_save=True,
-            model_collect_random_data=True,
-            log_dir="/tmp/",
-            training_epochs=1,
-            game_qc_threshold=0.5,
-            game_max_replay_on_fail=500,
+            epsilon = 1,
+            epsilon_dec = 1e-3,
+            epsilon_min = 0.01,
+            model_path = 'py_2048_rl.models.DEFAULT_MODEL',
+            model_load_file = None,
+            model_save_file = 'model.h5',
+            model_auto_save = True,
+            model_collect_random_data =True,
+            log_dir = "/tmp/",
+            training_epochs = 1,
+            game_qc_threshold = 0.5,
+            game_max_replay_on_fail = 500,
+            invocation_params = None,
             **kwargs
         ):
         self.batch_size = batch_size
@@ -63,6 +64,7 @@ class Agent:
         self.training_epochs = training_epochs
         self.game_qc_threshold = game_qc_threshold
         self.game_max_replay_on_fail = game_max_replay_on_fail
+        self.invocation_params = invocation_params
 
         self.episode_db = episodes.EdpisodeDB(
             self.mem_size,
@@ -214,6 +216,7 @@ class Agent:
         if self.log_dir:
             file_writer = tf.summary.create_file_writer(self.log_dir)
             file_writer.set_as_default()
+            tf.summary.text("Invocation parameters: ", self.invocation_params.__str__(), step=0)
 
         for i in range(n_cycles):
             self.learn(i)

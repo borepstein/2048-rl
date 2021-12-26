@@ -110,7 +110,8 @@ def main():
         log_dir=args.log_dir,
         training_epochs=args.training_epochs,
         game_qc_threshold=args.game_qc_threshold,
-        game_max_replay_on_fail=args.game_max_replay_on_fail
+        game_max_replay_on_fail=args.game_max_replay_on_fail,
+        invocation_params=vars(args)
     )
 
     if args.action == 'train':
