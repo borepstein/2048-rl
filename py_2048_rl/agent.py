@@ -188,7 +188,13 @@ class Agent:
         if q_target is None:
             return
 
-        callbacks = []
+        callbacks = [tf.keras.callbacks.ReduceLROnPlateau(monitor='categorical_accuracy',
+                                                          factor=0.5,
+                                                          patience=0,
+                                                          min_lr=0.00001,
+                                                          verbose=2
+                                                          )
+                     ]
         if self.log_dir:
             callbacks.append(self.tb_callback)
 
