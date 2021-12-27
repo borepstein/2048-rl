@@ -18,8 +18,16 @@ parser.add_argument('--batch-size', type=int, default=10000,
                     help='Training batch selection size (in number of episodes')
 parser.add_argument('--mem-size', type=int, default=50000,
                     help='Learning episode DB size (in number of episodes')
-parser.add_argument('--lr', type=float, default=0.0001,
+parser.add_argument('--lr', type=float, default=0.001,
                     help='Learning rate')
+parser.add_argument('--lr_min', type=float, default=0.00001,
+                    help='Learning rate: minimal value allowed in epochs')
+parser.add_argument('--lr_redux', type=float, default=0.9,
+                    help='Learning rate: per step reduction ratio')
+parser.add_argument('--lr_patience', type=int, default=2,
+                    help='Learning rate: number of epochs to wait before reducing LR')
+parser.add_argument('--lr_verbose', type=int, default=2,
+                    help='Learning rate: modification verbosity level')
 parser.add_argument('--gamma', type=float, default=0.99,
                     help='Gamma')
 parser.add_argument('--gamma1', type=float, default=0.99,
@@ -40,7 +48,7 @@ parser.add_argument('--model-load-file', default=None,
                     help='Model load file path (h5)')
 parser.add_argument('--model-save-file', default='model.h5',
                     help='Model save file path (h5)')
-parser.add_argument('--training-epochs', type=int, default=1,
+parser.add_argument('--training-epochs', type=int, default=100,
                     help='Number of epoch rns for every model training run')
 parser.add_argument('--game-max-replay-on-fail', type=int, default=50,
                     help='Number of replay runs for a game failing quality control')
@@ -95,6 +103,9 @@ def main():
         # input_dims=args.input_dims,
         input_dims=[16],
         lr=args.lr,
+        lr_min=args.lr_min,
+        lr_redux=args.lr_redux,
+        lr_patience=args.lr_patience,
         gamma=args.gamma,
         gamma1=args.gamma1,
         gamma2=args.gamma2,

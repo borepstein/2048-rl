@@ -17,10 +17,14 @@ def random_action_callback(game):
 class Agent:
     def __init__(
             self,
-            batch_size=10000,
-            mem_size=50000,
-            input_dims=[16],
-            lr=0.001,
+            batch_size= 10000,
+            mem_size= 50000,
+            input_dims= [16],
+            lr = 0.001,
+            lr_min = 0.00001,
+            lr_redux = 0.9,
+            lr_patience = 2,
+            lr_verbose = 2,
             gamma=0.99,
             gamma1=0.0,
             gamma2=0.99,
@@ -36,7 +40,7 @@ class Agent:
             model_auto_save = True,
             model_collect_random_data =True,
             log_dir = "/tmp/",
-            training_epochs = 1,
+            training_epochs = 100,
             game_qc_threshold = 0.5,
             game_max_replay_on_fail = 50,
             invocation_params = None,
@@ -46,6 +50,10 @@ class Agent:
         self.mem_size = mem_size
         self.input_dims = input_dims[::]
         self.lr = lr
+        self.lr_min = lr_min
+        self.lr_redux = lr_redux
+        self.lr_patience = lr_patience
+        self.lr_verbose = lr_verbose
         self.gamma = gamma
         self.gamma1 = gamma1
         self.gamma2 = gamma2
@@ -189,10 +197,10 @@ class Agent:
             return
 
         callbacks = [tf.keras.callbacks.ReduceLROnPlateau(monitor='categorical_accuracy',
-                                                          factor=0.5,
-                                                          patience=0,
-                                                          min_lr=0.00001,
-                                                          verbose=2
+                                                          factor=self.lr_redux,
+                                                          patience=self.lr_patience,
+                                                          min_lr=self.lr_min,
+                                                          verbose=self.lr_verbose
                                                           )
                      ]
         if self.log_dir:
