@@ -38,7 +38,7 @@ class Agent:
             log_dir = "/tmp/",
             training_epochs = 1,
             game_qc_threshold = 0.5,
-            game_max_replay_on_fail = 500,
+            game_max_replay_on_fail = 50,
             invocation_params = None,
             **kwargs
         ):

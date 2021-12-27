@@ -42,7 +42,7 @@ parser.add_argument('--model-save-file', default='model.h5',
                     help='Model save file path (h5)')
 parser.add_argument('--training-epochs', type=int, default=1,
                     help='Number of epoch rns for every model training run')
-parser.add_argument('--game-max-replay-on-fail', type=int, default=500,
+parser.add_argument('--game-max-replay-on-fail', type=int, default=50,
                     help='Number of replay runs for a game failing quality control')
 parser.add_argument('--game-qc-threshold', type=float, default=0.5,
                     help='Quotient of maximum score needed to pass quality control')
