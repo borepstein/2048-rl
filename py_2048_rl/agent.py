@@ -172,8 +172,7 @@ class Agent:
             self.gamma * np.max(q_next, axis=1) +
             self.gamma1 * tf.math.reduce_sum(tf.cast(tf.equal(states, 0), tf.int32), axis=1
                                              ).numpy() +
-            self.gamma2 * scores.numpy() *
-            dones.numpy() +
+            self.gamma2 * scores.numpy() +
             self.gamma3 * np.max(states, axis=1)
         )
 
@@ -233,7 +232,7 @@ class Agent:
                 last_training_mc = self.last_move_count
 
                 if inference_on_learn:
-                    self.play_on_repeat(tb_logging=False, record_in_episode_db=True)
+                    self.play_on_repeat(tb_logging=False)
                     tf.summary.scalar('Game score (inference)', data=self.last_game_score, step=self.infer_game_count)
 
                 cycle_game_count += 1
@@ -250,7 +249,7 @@ class Agent:
                 avg_score = sum_scores / self.game_count
 
                 logger.info('Game %d: min=%s avg=%s last=%s max=%s',
-                            self.game_count, min_score, avg_score, self.last_game_score, max_score)
+                            self.game_count, min_score, avg_score, last_training_score, max_score)
 
                 tf.summary.scalar('Game score', data=last_training_score, step=self.game_count)
                 tf.summary.scalar('Game score (average)', data=avg_score, step=self.game_count)
@@ -308,13 +307,19 @@ class Agent:
                   max_replays=0,
                   record_in_episode_db=True
                   ):
-        game = Game()
         replay_cnt = 0
         top_cnt = 0
         prev_top_cnt = 0
         top_move_cnt = 0
 
         replay_lim = max_replays
+
+        #
+        # Defaulting to self.game_max_replay_on_fail
+        # ig max_replays not specified.
+        #
+        if max_replays == 0:
+            replay_lim = self.game_max_replay_on_fail
 
         if replay_on_fail and replay_lim == 0:
             replay_lim = self.game_max_replay_on_fail
@@ -323,6 +328,7 @@ class Agent:
 
         while True:
             episode_arr = []
+            game = Game()
 
             while not game.game_over():
                 action = action_callback(game)
@@ -344,7 +350,12 @@ class Agent:
             top_cnt = max(game.score, top_cnt)
 
             if top_cnt > prev_top_cnt:
-                candidate_arr = episode_arr
+                candidate_arr = episode_arr.copy()
+
+                # Update scoresd in candidate_arr
+                for e in candidate_arr:
+                    e.score = top_cnt
+
                 prev_top_cnt = top_cnt
                 top_move_cnt = game.move_count
 
@@ -367,12 +378,12 @@ class Agent:
             for e in candidate_arr:
                 self.episode_db.store_episode(e)
 
-        self.max_game_score = max(self.max_game_score, game.score)
+        self.max_game_score = max(self.max_game_score, top_cnt)
 
         if self.min_game_score == 0:
-            self.min_game_score = game.score
+            self.min_game_score = top_cnt
         else:
-            self.min_game_score = min(self.min_game_score, game.score)
+            self.min_game_score = min(self.min_game_score, top_cnt)
 
         self.last_game_score = top_cnt
         self.last_move_count = top_move_cnt
@@ -392,7 +403,7 @@ class Agent:
         sel_f = self.arg_sel_func()
         return avai_actions[sel_f(pred_actions[avai_actions])]
 
-    def play_on_repeat(self, n_games=1, tb_logging=True, record_in_episode_db=False):
+    def play_on_repeat(self, n_games=1, tb_logging=True, record_in_episode_db=False, replay_on_fail=False):
         min_score = 0
         max_score = 0
         sum_scores = 0
@@ -402,7 +413,7 @@ class Agent:
             file_writer.set_as_default()
 
         for i in range(n_games):
-            self.play_game(self.action_greedy,record_in_episode_db=record_in_episode_db)
+            self.play_game(self.action_greedy,record_in_episode_db=record_in_episode_db,replay_on_fail=replay_on_fail)
             self.infer_game_count += 1
 
             if i == 0:
