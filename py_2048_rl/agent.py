@@ -306,10 +306,6 @@ class Agent:
         logger.debug("Initial data accumulation completed.")
 
     def game_qc(self, game):
-        # Return True is no data thus far.
-        if self.max_game_score == 0:
-            return True
-
         if game.score < self.game_qc_threshold * self.max_game_score:
             return False
 
