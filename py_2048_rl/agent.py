@@ -20,7 +20,7 @@ class Agent:
             batch_size= 10000,
             mem_size= 50000,
             input_dims= [16],
-            lr = 0.001,
+            lr = 0.0001,
             lr_min = 0.00001,
             lr_redux = 0.9,
             lr_patience = 2,
