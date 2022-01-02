@@ -180,7 +180,7 @@ class Agent:
             self.gamma * np.max(q_next, axis=1) +
             self.gamma1 * tf.math.reduce_sum(tf.cast(tf.equal(states, 0), tf.int32), axis=1
                                              ).numpy() +
-            self.gamma2 * scores.numpy() +
+            self.gamma2 * scores.numpy() * dones.numpy() +
             self.gamma3 * np.max(states, axis=1)
         )
 
