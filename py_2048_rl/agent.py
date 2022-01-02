@@ -306,10 +306,24 @@ class Agent:
         logger.debug("Initial data accumulation completed.")
 
     def game_qc(self, game):
+        """Game quality control
+
+         Takes an instance of Game as argument.
+         Returns False (fail) if the score in that game is below the game_qc_threshold multiplied
+         by the the maximum game score obtained thus far.
+         Otherwise, returns True.
+
+         Example: the highest score attained thus far is 10,000. A new game has just been concluded. The score
+         in that game is 6,000. This game is accepted.
+
+         Example: the highest score attained thus far is 10,000. A new game has just been concluded. The score
+         in that game is 4,000. This game is rejected.
+         """
         if game.score < self.game_qc_threshold * self.max_game_score:
             return False
 
         return True
+
 
     def play_game(self,
                   action_callback,
@@ -317,6 +331,17 @@ class Agent:
                   max_replays=0,
                   record_in_episode_db=True
                   ):
+        """Execute a full game fitting for data collection
+
+         Arguments:
+
+         action_callback: the function that takes a Game() instance as an argument and returns a next move (action)
+         recommendation
+
+         replay_on_fail: if True replay until the Game instance resulting passes quality control, for no more than the
+         prescribed number of tries.
+         """
+
         replay_cnt = 0
         top_cnt = 0
         prev_top_cnt = 0
@@ -361,27 +386,19 @@ class Agent:
 
             if top_cnt > prev_top_cnt:
                 candidate_arr = episode_arr.copy()
-
-                # Update scoresd in candidate_arr
-                for e in candidate_arr:
-                    e.score = top_cnt
-
                 prev_top_cnt = top_cnt
                 top_move_cnt = game.move_count
 
-            score_pass = self.game_qc(game)
             replay_cnt += 1
 
-            if not record_in_episode_db:
-                break
-
-            if score_pass:
-                break
-
-            if not replay_on_fail:
-                break
-
-            if replay_on_fail and replay_cnt >= replay_lim:
+            # Exiting the cycle once the game passes game_qc
+            # or if the quality control is not required
+            # or database recording is not requested
+            # or the replay limit is reached
+            if not record_in_episode_db or \
+                    not replay_on_fail or \
+                    self.game_qc(game) or \
+                    replay_cnt >= replay_lim:
                 break
 
         if record_in_episode_db:
@@ -397,7 +414,6 @@ class Agent:
 
         self.last_game_score = top_cnt
         self.last_move_count = top_move_cnt
-
     def action_greedy_epsilon(self, game):
         if np.random.random() < self.get_epsilon():
             return random_action_callback(game)
